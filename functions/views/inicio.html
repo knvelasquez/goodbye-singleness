@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Despedida de Soltero: Misión Final</title>  
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    .player-info {
+      margin-bottom: 1rem;
+    }
+
+    .role {
+      font-weight: bold;
+    }
+
+    .start-button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      background-color: #28a745;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+
+    .start-button:hover {
+      background-color: #218838;
+    }
+
+    .waiting-message {
+      font-size: 1.2rem;
+      margin-top: 2rem;
+      color: #ffc107;
+    }
+  </style>
+</head>
+<body>
+  <h1>Despedida de Soltero: Misión Final</h1>
+  <div class="player-info">
+    <p id="playerName">Nombre: </p>
+    <p id="playerRole">Rol: <span id="roleText">*********</span></p>
+    <button class="start-button" onclick="toggleRole()">Mostrar Rol</button>
+  </div>
+
+  <div class="waiting-message" id="waitingMessage">
+    Esperando a que el administrador inicie el juego...
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script> 
+  <script>
+    // Obtener los datos del jugador desde localStorage
+    const jugador = JSON.parse(localStorage.getItem('jugador'));
+  
+    // Si no se encuentra el jugador en localStorage, redirigir al login
+    if (!jugador) {
+      window.location.href = '/'; // Redirige al login
+    } else {
+      const playerName = document.getElementById('playerName');
+      const roleText = document.getElementById('roleText');
+      const toggleButton = document.querySelector('.start-button');
+  
+      // Mostrar el nombre del jugador
+      if (jugador && jugador.nombre) {
+        playerName.textContent = `Nombre: ${jugador.nombre}`;
+      }
+  
+      // Variable para controlar la visibilidad del rol
+      let rolVisible = false;
+  
+      // Función para alternar la visibilidad del rol
+      function toggleRole() {
+        if (rolVisible) {
+          roleText.textContent = '*********';
+          toggleButton.textContent = 'Mostrar Rol';
+          rolVisible = false;
+        } else {
+          roleText.textContent = jugador.rol;
+          toggleButton.textContent = 'Ocultar Rol';
+          rolVisible = true;
+        }
+      }
+  
+      // Conexión al servidor Socket.IO
+      const socket = io('http://localhost:3000');
+      
+      socket.on('connect', () => {
+        console.log('Conectado al servidor');
+        // Emitir evento para notificar al servidor que el usuario se conectó
+        socket.emit('nuevoUsuario', jugador ? jugador.nombre : 'Jugador Desconocido');
+      });
+  
+      socket.on('reiniciarSesionFront', () => {
+        alert("reinciiar")
+        localStorage.clear();
+        window.location.href = "/";
+        console.log('Sesiones reiniciadas');
+      });
+  
+      socket.on('actualizarUsuarios', (usuarios) => {
+        console.log('Usuarios conectados:', usuarios);
+      });
+    }
+  </script>
+  
+  
+</body>
+</html>

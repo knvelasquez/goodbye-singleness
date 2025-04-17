@@ -1,0 +1,31 @@
+{
+  "name": "goodbye-singleness",
+  "version": "1.0.0",
+  "description": "goodbye-singleness",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon functions/api.js",
+    "build": "netlify deploy --prod"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/knvelasquez/goodbye-singleness.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/knvelasquez/goodbye-singleness/issues"
+  },
+  "homepage": "https://github.com/knvelasquez/goodbye-singleness#readme",
+  "dependencies": {
+    "express": "^5.1.0",
+    "serverless-http": "^3.2.0",
+    "socket.io": "^4.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9",
+    "socket.io-client": "^4.8.1"
+  }
+}

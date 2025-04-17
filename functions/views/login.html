@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ingreso al Juego</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #28a745;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+
+    #rolAsignado {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Ingresa tu nombre para unirte al juego</h1>
+  <form id="formIngreso">
+    <input type="text" id="nombreJugador" placeholder="Tu nombre" required />
+    <button type="submit">Unirse</button>
+  </form>
+  <div id="rolAsignado"></div>
+
+  <script>
+    const rolesDisponibles = ["Tripulante", "Impostor", "Novio"];
+
+    // Verificar si ya existe un jugador almacenado
+    const jugadorExistente = JSON.parse(localStorage.getItem('jugador'));
+    if (jugadorExistente && jugadorExistente.nombre && jugadorExistente.rol) {
+      // Redirigir automáticamente a la sala
+      window.location.href = "inicio";
+    }
+
+    document.getElementById('formIngreso').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nombre = document.getElementById('nombreJugador').value.trim();
+      if(nombre === "") return;
+
+      // Asignar rol aleatorio
+      const rol = rolesDisponibles[Math.floor(Math.random() * rolesDisponibles.length)];
+
+      // Guardar jugador en localStorage
+      const jugador = { nombre, rol };
+      localStorage.setItem('jugador', JSON.stringify(jugador));
+
+      // Mostrar rol asignado
+      document.getElementById('rolAsignado').innerText = `Hola ${nombre}, tu rol es: ${rol}`;
+
+      // Redirigir a la sala después de un breve retraso
+      setTimeout(() => {
+        window.location.href = "inicio";
+      }, 2000);
+    });
+  </script>
+</body>
+</html>
