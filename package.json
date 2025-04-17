@@ -5,7 +5,7 @@
   "main": "functions/api.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon functions/api.js"
+    "start": "node functions/api.js"
   },
   "repository": {
     "type": "git",
