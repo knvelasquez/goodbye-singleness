@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Despedida de Soltero: Misión Final</title>  
+  <title>Despedida de Soltero: Misión Final</title>
   <style>
     body {
       margin: 0;
@@ -20,6 +20,10 @@
 
     .player-info {
       margin-bottom: 1rem;
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      background-color: #34495e;
+      transition: background-color 0.5s ease, box-shadow 0.5s ease;
     }
 
     .role {
@@ -46,42 +50,73 @@
       margin-top: 2rem;
       color: #ffc107;
     }
+
+    .novio {
+      background-color: #f39c12 !important;
+      box-shadow: 0 0 15px #f39c12;
+    }
+
+    .highlight {
+      animation: highlightChange 1s ease;
+    }
+
+    @keyframes highlightChange {
+      0% { transform: scale(1); background-color: #fff70033; }
+      50% { transform: scale(1.05); background-color: #fff70088; }
+      100% { transform: scale(1); background-color: transparent; }
+    }
+
+    #spinBtn {
+      display: none;
+      margin-top: 20px;
+      padding: 1rem 2rem;
+      background-color: #e74c3c;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    #spinBtn:hover {
+      background-color: #c0392b;
+    }
   </style>
 </head>
 <body>
   <h1>Despedida de Soltero: Misión Final</h1>
-  <div class="player-info">
+  <div class="player-info" id="playerInfo">
     <p id="playerName">Nombre: </p>
-    <p id="playerRole">Rol: <span id="roleText">*********</span></p>
-    <button class="start-button" onclick="toggleRole()">Mostrar Rol</button>
+    <p id="playerRole" class="role">Rol: <span id="roleText">*********</span></p>
+    <button class="start-button" onclick="toggleRole()" id="toggleRoleBtn">Mostrar Rol</button>
   </div>
 
   <div class="waiting-message" id="waitingMessage">
     Esperando a que el administrador inicie el juego...
   </div>
 
-  <script src="/socket.io/socket.io.js"></script> 
+  <button id="spinBtn" onclick="girarRuleta()">Girar Ruleta</button>
+
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    // Obtener los datos del jugador desde localStorage
     const jugador = JSON.parse(localStorage.getItem('jugador'));
-  
-    // Si no se encuentra el jugador en localStorage, redirigir al login
+
     if (!jugador) {
       window.location.href = '/'; // Redirige al login
     } else {
       const playerName = document.getElementById('playerName');
       const roleText = document.getElementById('roleText');
       const toggleButton = document.querySelector('.start-button');
-  
+      const toggleRoleBtn = document.getElementById('toggleRoleBtn');
+      const playerInfo = document.getElementById('playerInfo');
+      const waitingMessage = document.getElementById('waitingMessage');
+      const spinBtn = document.getElementById('spinBtn');
+
       // Mostrar el nombre del jugador
-      if (jugador && jugador.nombre) {
-        playerName.textContent = `Nombre: ${jugador.nombre}`;
-      }
-  
-      // Variable para controlar la visibilidad del rol
+      playerName.textContent = `Nombre: ${jugador.nombre}`;
+
       let rolVisible = false;
-  
-      // Función para alternar la visibilidad del rol
+
       function toggleRole() {
         if (rolVisible) {
           roleText.textContent = '*********';
@@ -93,29 +128,75 @@
           rolVisible = true;
         }
       }
-  
-      // Conexión al servidor Socket.IO
-      const socket = io('http://localhost:3000');
-      
-      socket.on('connect', () => {
-        console.log('Conectado al servidor');
-        // Emitir evento para notificar al servidor que el usuario se conectó
-        socket.emit('nuevoUsuario', jugador ? jugador.nombre : 'Jugador Desconocido');
+
+      const socket = io();
+
+      // Escuchar cambios de rol
+      socket.on('actualizarRol', (data) => {
+        if (data.nombre === jugador.nombre) {
+          jugador.rol = data.rol;
+          localStorage.setItem('jugador', JSON.stringify(jugador));
+          roleText.textContent = jugador.rol;
+
+          // Animación visual
+          playerInfo.classList.add('highlight');
+          setTimeout(() => {
+            playerInfo.classList.remove('highlight');
+          }, 1000);
+
+          // Aplicar/quitar estilo "Novio"
+          if (jugador.rol === 'Novio' || jugador.rol === 'Impostor') {
+            playerInfo.classList.add('novio');
+          } else {
+            playerInfo.classList.remove('novio');
+          }
+        }
       });
-  
+
+      // Reinicio desde el admin
       socket.on('reiniciarSesionFront', () => {
-        alert("reinciiar")
         localStorage.clear();
         window.location.href = "/";
         console.log('Sesiones reiniciadas');
       });
-  
-      socket.on('actualizarUsuarios', (usuarios) => {
-        console.log('Usuarios conectados:', usuarios);
+
+      // Registro inicial
+      socket.emit('nuevoUsuario', {
+        nombre: jugador.nombre,
+        rol: jugador.rol
       });
+
+      // Mostrar mensaje de espera
+      socket.on('esperandoAdmin', () => {
+        waitingMessage.style.display = 'block';
+      });
+
+      // Escuchar cuando el admin inicie el juego
+      socket.on('inicioJuego', () => {
+        waitingMessage.textContent = '¡El juego ha comenzado! Prepárate para la misión final!';
+        waitingMessage.style.color = '#2ecc71'; // Verde para indicar que el juego ha comenzado
+      });
+
+      // Escuchar cuando el admin habilite la ruleta
+      socket.on('habilitarRuleta', () => {
+        spinBtn.style.display = 'inline-block'; // Mostrar el botón para girar la ruleta
+      });
+
+      // Escuchar cuando el admin habilite una pista
+      socket.on('habilitarPistaFront', (tip) => {
+        console.log("habilitarPistaFront")
+        waitingMessage.textContent = tip;
+      });
+
+      // Función para girar la ruleta
+      function girarRuleta() {
+        socket.emit('girarRuleta',jugador.rol);
+        // Ocultar el botón de girar ruleta después de hacer clic
+        document.getElementById('spinBtn').style.display = 'none';
+
+        waitingMessage.textContent = '¡Esta girando la ruleta!';
+      }
     }
   </script>
-  
-  
 </body>
 </html>

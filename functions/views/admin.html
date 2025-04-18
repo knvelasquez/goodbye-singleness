@@ -22,6 +22,9 @@
       margin: 5px 0;
       padding: 10px;
       border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     .button {
       background-color: #e74c3c;
@@ -37,42 +40,181 @@
     .button:hover {
       background-color: #c0392b;
     }
+    .asignar-btn, .quitar-btn, .dar-turno-btn {
+      border: none;
+      padding: 6px 12px;
+      color: white;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .asignar-btn {
+      background-color: #3498db;
+    }
+    .asignar-btn:hover {
+      background-color: #2980b9;
+    }
+    .quitar-btn {
+      background-color: #e67e22;
+    }
+    .quitar-btn:hover {
+      background-color: #d35400;
+    }
+    .dar-turno-btn {
+      background-color: #27ae60;
+    }
+    .dar-turno-btn:hover {
+      background-color: #2ecc71;
+    }
   </style>
 </head>
 <body>
-  <h1>Usuarios Conectados</h1>
+  <h1>Conectados</h1>
   <ul id="listaUsuarios"></ul>
 
+  <!-- Botón para reiniciar sesiones -->
   <button class="button" id="reiniciarBtn">Reiniciar Sesiones</button>
+
+  <!-- Botón para iniciar el juego -->
+  <button class="button" id="iniciarJuegoBtn">Iniciar Juego</button>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io('http://localhost:3000');
-
+    const socket = io();
     const listaUsuarios = document.getElementById('listaUsuarios');
     const reiniciarBtn = document.getElementById('reiniciarBtn');
+    const iniciarJuegoBtn = document.getElementById('iniciarJuegoBtn');
 
-    // Función para actualizar la lista de usuarios conectados
+    let usuariosActuales = [];
+
+    // Actualiza la lista de usuarios
     function actualizarListaUsuarios(usuarios) {
+      usuariosActuales = usuarios;
       listaUsuarios.innerHTML = '';
+
+      const yaHayNovio = usuarios.some(u => u.rol === 'Novio');
+      const yaHayImpostor = usuarios.some(u => u.rol === 'Impostor');
+
       usuarios.forEach(usuario => {
         const li = document.createElement('li');
-        li.textContent = usuario.nombre;
+        li.textContent = `${usuario.nombre} - Rol: ${usuario.rol || 'Sin rol'}`;
+
+        const accionesDiv = document.createElement('div');
+
+        // Botón para asignar "Novio"
+        if (!yaHayNovio && (!usuario.rol || usuario.rol !== 'Novio')) {
+          const botonAsignar = document.createElement('button');
+          botonAsignar.textContent = 'Asignar Novio';
+          botonAsignar.className = 'asignar-btn';
+          botonAsignar.onclick = () => {
+            socket.emit('asignarNovio', usuario.nombre);
+          };
+          accionesDiv.appendChild(botonAsignar);
+        }
+
+        // Botón para quitar el rol "Novio"
+        if (usuario.rol === 'Novio') {
+          const botonQuitar = document.createElement('button');
+          botonQuitar.textContent = 'Quitar Novio';
+          botonQuitar.className = 'quitar-btn';
+          botonQuitar.onclick = () => {
+            socket.emit('quitarNovio', usuario.nombre);
+          };
+          accionesDiv.appendChild(botonQuitar);
+        }
+
+        // Botón para asignar "Impostor"
+        if (!usuario.rol || usuario.rol !== 'Impostor') {
+          const botonAsignarImpostor = document.createElement('button');
+          botonAsignarImpostor.textContent = 'Asignar Impostor';
+          botonAsignarImpostor.className = 'asignar-btn';
+          botonAsignarImpostor.onclick = () => {
+            socket.emit('asignarImpostor', usuario.nombre);
+          };
+          accionesDiv.appendChild(botonAsignarImpostor);
+        }
+
+        // Botón para quitar el rol "Impostor"
+        if (usuario.rol === 'Impostor') {
+          const botonQuitarImpostor = document.createElement('button');
+          botonQuitarImpostor.textContent = 'Quitar Impostor';
+          botonQuitarImpostor.className = 'quitar-btn';
+          botonQuitarImpostor.onclick = () => {
+            socket.emit('quitarImpostor', usuario.nombre);
+          };
+          accionesDiv.appendChild(botonQuitarImpostor);
+        }
+
+        // Botón para asignar "Tripulante"
+        if (!usuario.rol || usuario.rol !== 'Tripulante') {
+          const botonAsignar = document.createElement('button');
+          botonAsignar.textContent = 'Asignar Tripulante';
+          botonAsignar.className = 'asignar-btn';
+          botonAsignar.onclick = () => {
+            socket.emit('asignarTripulante', usuario.nombre);
+          };
+          accionesDiv.appendChild(botonAsignar);
+        }
+
+        // Botón para dar turno al jugador
+        const botonDarTurno = document.createElement('button');
+        botonDarTurno.textContent = 'Dar Turno';
+        botonDarTurno.className = 'dar-turno-btn';
+        botonDarTurno.onclick = () => {
+          socket.emit('habilitarRuleta', usuario.nombre);
+          botonDarTurno.style.display = 'none'; // Ocultar el botón después de dar turno
+        };       
+
+        accionesDiv.appendChild(botonDarTurno);
+
+         //Boton para dar pista al jugador que giro la ruleta
+         const botonDarPista = document.createElement('button');
+        botonDarPista.textContent = 'Dar Pista';
+        botonDarPista.className = 'dar-turno-btn';
+        botonDarPista.onclick = () => {
+          socket.emit('habilitarPista', usuario.nombre);
+         // botonDarPista.style.display = 'none'; // Ocultar el botón después de dar turno
+        };
+        accionesDiv.appendChild(botonDarPista);
+
+        li.appendChild(accionesDiv);
         listaUsuarios.appendChild(li);
       });
     }
 
-    // Solicitar la lista de usuarios conectados al servidor
-    socket.emit('solicitarUsuarios');
+    // Solicitar la lista de usuarios al servidor
+    socket.emit('solicitarUsuariosBack');
 
-    // Escuchar la respuesta del servidor con la lista de usuarios
+    // Actualizar la lista de usuarios cuando el servidor envíe la actualización
     socket.on('actualizarUsuarios', (usuarios) => {
       actualizarListaUsuarios(usuarios);
     });
 
-    // Enviar evento para reiniciar las sesiones cuando el administrador haga clic en el botón
+    // Actualizar el rol de un usuario
+    socket.on('actualizarRol', ({ nombre, rol }) => {
+      usuariosActuales = usuariosActuales.map(user => 
+        user.nombre === nombre ? { ...user, rol } : user
+      );
+      actualizarListaUsuarios(usuariosActuales);
+    });
+
+    // Reiniciar las sesiones
     reiniciarBtn.addEventListener('click', () => {
       socket.emit('reiniciarSesion'); 
+    });
+
+    // Emitir el evento para iniciar el juego
+    iniciarJuegoBtn.addEventListener('click', () => {
+      socket.emit('iniciarJuego'); 
+    });
+
+    // Escuchar el evento para cuando se gire la ruleta
+    socket.on('ruletaGirada', () => {
+      // Mostrar nuevamente el botón de "Dar Turno" después de que se haya girado la ruleta
+      const botonesDarTurno = document.querySelectorAll('.dar-turno-btn');
+      botonesDarTurno.forEach(btn => {
+        btn.style.display = 'inline-block'; // Mostrar el botón de dar turno
+      });
     });
   </script>
 </body>

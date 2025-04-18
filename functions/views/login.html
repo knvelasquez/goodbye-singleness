@@ -60,24 +60,32 @@
   <h1>Ingresa tu nombre para unirte al juego</h1>
   <form id="formIngreso">
     <input type="text" id="nombreJugador" placeholder="Tu nombre" required />
-    <button type="submit">Unirse</button>
+    <button type="submit" id="unirseBtn">Unirse</button>
   </form>
   <div id="rolAsignado"></div>
 
   <script>
-    const rolesDisponibles = ["Tripulante", "Impostor", "Novio"];
-
-    // Verificar si ya existe un jugador almacenado
+    let rolesDisponibles = [];
+  
+    // Obtener configuración desde el backend
+    fetch(`${window.location.origin}/config-juego`) // Cambiar por la URL real
+      .then(res => res.json())
+      .then(config => {
+        rolesDisponibles = config.rolesDisponibles;
+      });
+  
+    // Verificar si ya existe un jugador en el localStorage
     const jugadorExistente = JSON.parse(localStorage.getItem('jugador'));
     if (jugadorExistente && jugadorExistente.nombre && jugadorExistente.rol) {
-      // Redirigir automáticamente a la sala
       window.location.href = "inicio";
     }
-
+  
     document.getElementById('formIngreso').addEventListener('submit', function(e) {
       e.preventDefault();
       const nombre = document.getElementById('nombreJugador').value.trim();
-      if(nombre === "") return;
+      
+      // Validar si el nombre no está vacío y hay roles disponibles
+      if (nombre === "" || rolesDisponibles.length === 0) return;
 
       // Asignar rol aleatorio
       const rol = rolesDisponibles[Math.floor(Math.random() * rolesDisponibles.length)];
@@ -85,11 +93,17 @@
       // Guardar jugador en localStorage
       const jugador = { nombre, rol };
       localStorage.setItem('jugador', JSON.stringify(jugador));
+      localStorage.setItem('rol', JSON.stringify(rol));
 
       // Mostrar rol asignado
-      document.getElementById('rolAsignado').innerText = `Hola ${nombre}, tu rol es: ${rol}`;
+      document.getElementById('rolAsignado').innerText = `Hola ${nombre}, por favor espera...`;
 
-      // Redirigir a la sala después de un breve retraso
+      // Deshabilitar el botón y ocultarlo para evitar múltiples clics
+      const unirseBtn = document.getElementById('unirseBtn');
+      unirseBtn.disabled = true;
+      unirseBtn.style.display = 'none';
+
+      // Redirigir después de un pequeño retraso
       setTimeout(() => {
         window.location.href = "inicio";
       }, 2000);
